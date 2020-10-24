@@ -1,0 +1,105 @@
+For better understand of complex python script implementation details, dis module can be used to disassemble python script bytecode.
+1. start python interactive mode
+   $ python 
+   Python 3.5.2 (default, Apr 16 2020, 17:47:17) 
+   [GCC 5.4.0 20160609] on linux
+   Type "help", "copyright", "credits" or "license" for more information.
+
+2. import dis module and input the code for disassemble
+>>> import dis
+>>> def decompose(text):
+...   return ([[text[:i]] + right for i in range(1,len(text)+1)
+...           if text[:i] == text[:i][::-1]
+...           for right in decompose(text[i:])] or [[]])
+... 
+
+3. to disassemble the function, call dis.dis
+>>> dis.dis(decompose)
+  2           0 LOAD_CLOSURE             0 (text)
+              3 BUILD_TUPLE              1
+              6 LOAD_CONST               1 (<code object <listcomp> at 0x7fb1a6f83e40, file "<stdin>", line 2>)
+              9 LOAD_CONST               2 ('decompose.<locals>.<listcomp>')
+             12 MAKE_CLOSURE             0
+             15 LOAD_GLOBAL              0 (range)
+             18 LOAD_CONST               3 (1)
+             21 LOAD_GLOBAL              1 (len)
+             24 LOAD_DEREF               0 (text)
+             27 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
+             30 LOAD_CONST               3 (1)
+             33 BINARY_ADD
+             34 CALL_FUNCTION            2 (2 positional, 0 keyword pair)
+             37 GET_ITER
+             38 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
+             41 JUMP_IF_TRUE_OR_POP     50
+
+  4          44 BUILD_LIST               0
+             47 BUILD_LIST               1
+        >>   50 RETURN_VALUE
+
+3. dis.dis does not recursively disassemble code object encountered (google shows later 3.7 version supports). 
+   ctypes module can help. To disassemble above listcomp code object 0x7fb1a6f83e40
+>>> import ctypes
+>>> c = ctypes.cast(0x7fb1a6f83e40,ctypes.py_object).value
+>>> dis.dis(c)
+  2           0 BUILD_LIST               0
+              3 LOAD_FAST                0 (.0)
+        >>    6 FOR_ITER               103 (to 112)
+              9 STORE_FAST               1 (i)
+
+  3          12 LOAD_DEREF               0 (text)
+             15 LOAD_CONST               0 (None)
+             18 LOAD_FAST                1 (i)
+             21 BUILD_SLICE              2
+             24 BINARY_SUBSCR
+             25 LOAD_DEREF               0 (text)
+             28 LOAD_CONST               0 (None)
+             31 LOAD_FAST                1 (i)
+             34 BUILD_SLICE              2
+             37 BINARY_SUBSCR
+             38 LOAD_CONST               0 (None)
+             41 LOAD_CONST               0 (None)
+             44 LOAD_CONST               2 (-1)
+             47 BUILD_SLICE              3
+             50 BINARY_SUBSCR
+             51 COMPARE_OP               2 (==)
+             54 POP_JUMP_IF_FALSE        6
+
+  4          57 LOAD_GLOBAL              0 (decompose)
+             60 LOAD_DEREF               0 (text)
+             63 LOAD_FAST                1 (i)
+             66 LOAD_CONST               0 (None)
+             69 BUILD_SLICE              2
+             72 BINARY_SUBSCR
+             73 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
+             76 GET_ITER
+        >>   77 FOR_ITER                29 (to 109)
+             80 STORE_FAST               2 (right)
+             83 LOAD_DEREF               0 (text)
+             86 LOAD_CONST               0 (None)
+             89 LOAD_FAST                1 (i)
+             92 BUILD_SLICE              2
+             95 BINARY_SUBSCR
+             96 BUILD_LIST               1
+             99 LOAD_FAST                2 (right)
+            102 BINARY_ADD
+            103 LIST_APPEND              3
+            106 JUMP_ABSOLUTE           77
+        >>  109 JUMP_ABSOLUTE            6
+        >>  112 RETURN_VALUE
+
+4. the leftmost number is source code line number. the number before instruction is instruction offset within bytecode.
+   the right number is opargs
+
+5. https://docs.python.org/3/library/dis.html or similar website provide each bytecode instructions semantics.
+   for example, LOAD_CONST(consti) Pushes co_consts[consti] onto the stack.
+   CPython implementation can be referenced for deeper understanding of each bytecode instruction implementation.
+
+6. to show each variable type, to show a given object attributes, to get a given object pydoc, use type, dir, help built-ins
+>>> type(decompose)
+<class 'function'>
+>>> dir(decompose)
+['__annotations__', '__call__', '__class__', '__closure__', '__code__', '__defaults__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__get__', '__getattribute__', '__globals__', '__gt__', '__hash__', '__init__', '__kwdefaults__', '__le__', '__lt__', '__module__', '__name__', '__ne__', '__new__', '__qualname__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__']
+>>> help(decompose)
+ 
+
+

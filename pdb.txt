@@ -1,0 +1,76 @@
+During python script debug, it is quite useful to step through script as gdb debug C code.
+Here are some usage of pdb module for debugging python script.
+0. test.py code
+  1 import dis
+  2 
+  3 def decompose_palindrome(text):
+  4   def decompose_palindrome_helper(offset, part_result):
+  5     if offset == len(text):
+  6       result.append(list(part_result))
+  7       return
+  8 
+  9     for i in range(offset + 1, len(text) + 1):
+ 10       prefix = text[offset:i]
+ 11       if prefix == prefix[::-1]:
+ 12         decompose_palindrome_helper(i, part_result + [prefix])
+ 13 
+ 14   result = []
+ 15   decompose_palindrome_helper(0,[])
+ 16   return result
+ 17 
+ 18 def decompose_palindrome_pythonic(text):
+ 19   return ([[text[:i]] + right for i in range(1,len(text)+1)
+ 20           if text[:i] == text[:i][::-1]
+ 21           for right in decompose_palindrome_pythonic(text[i:])]
+ 22           or [[]])
+ 23 
+ 24 print(decompose_palindrome_pythonic("0201881"))
+ 25 print(decompose_palindrome("0204451881"))
+
+1. start test.py script in debug mode
+$python -m pdb test.py
+
+2. list file contents being traced.
+> /home/rhino/study/python/test.py(1)<module>()
+-> import dis
+(Pdb) list
+  1  ->	import dis
+  2  	
+  3  	def decompose_palindrome(text):
+  4  	  def decompose_palindrome_helper(offset, part_result):
+  5  	    if offset == len(text):
+  6  	      result.append(list(part_result))
+  7  	      return
+  8  	
+  9  	    for i in range(offset + 1, len(text) + 1):
+ 10  	      prefix = text[offset:i]
+ 11  	      if prefix == prefix[::-1]:
+(Pdb) 
+
+3. set a breakpoint and continue until breakpoint hit.
+(Pdb) b decompose_palindrome
+Breakpoint 1 at /home/rhino/study/python/test.py:3
+(Pdb) c
+[['0', '2', '0', '1', '8', '8', '1'], ['0', '2', '0', '1', '88', '1'], ['0', '2', '0', '1881'], ['020', '1', '8', '8', '1'], ['020', '1', '88', '1'], ['020', '1881']]
+> /home/rhino/study/python/test.py(4)decompose_palindrome()
+-> def decompose_palindrome_helper(offset, part_result):
+
+4. to run one line or step into a function
+(Pdb) n
+> /home/rhino/study/python/test.py(3)<module>()
+-> def decompose_palindrome(text):
+
+(Pdb) step
+> /home/rhino/study/python/test.py(14)decompose_palindrome()
+-> result = []
+
+5. to check a variable value
+(Pdb) p result
+[]
+(Pdb) result # or if the variable is not coincide with a command, omit p
+[]
+(Pdb) 
+
+6. quit current debug session
+(Pdb) quit()
+
